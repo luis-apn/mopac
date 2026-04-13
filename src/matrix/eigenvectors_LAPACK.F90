@@ -18,9 +18,9 @@
 #ifdef GPU
       Use mod_vars_cuda, only: lgpu, ngpus, prec
 #endif
-#if (MAGMA)
-      Use magma
-      use initMagma
+#ifdef MAGMA
+      !Use magma
+      use mod_initMagma
 #endif
 
       implicit none
@@ -71,7 +71,7 @@ end if
 
 ! GBR_new_addition
 
-#if (MAGMA)
+#ifdef MAGMA
       if (lgpu .and. ndim > 100) then
          if (ngpus > 1) then
              call magma_dsyevd_Driver1(ngpus,'v','l',ndim,eigenvecs,ndim,eigvals,&
@@ -93,7 +93,7 @@ end if
       allocate (work(lwork), iwork(liwork), stat = i)
 !      forall (j=1:lwork) work(j) = 0.d0
 !      forall (j=1:liwork) iwork(j) = 0
-#if (MAGMA)
+#ifdef MAGMA
       if (lgpu .and. ndim > 100) then
          if (ngpus > 1) then
              call magma_dsyevd_Driver2(ngpus,'v','l',ndim,eigenvecs,ndim,eigvals,&
