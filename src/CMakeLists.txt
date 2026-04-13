@@ -45,4 +45,7 @@ endforeach()
 if(MDI)
   add_subdirectory(mdi)
 endif()
+if(GPU)
+  add_subdirectory(gpu)
+endif()
 #===============================================

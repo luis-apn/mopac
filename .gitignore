@@ -41,3 +41,9 @@ build*/
 
 # Local files directory
 local/
+
+# Old codes mopac
+old-codes-cuda-mopac/
+
+# plan Archive
+plan-mopac.md

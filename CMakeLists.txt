@@ -59,6 +59,27 @@ if(ENABLE_MKL OR USE_C_MALLOC OR FORCE_EXPORT_SYMBOLS)
   enable_language(C)
 endif()
 
+# GPU acceleration with CUDA and cuBLAS (+ optional MAGMA eigensolvers)
+option(GPU "Enable GPU acceleration with CUDA and cuBLAS" OFF)
+option(MAGMA "Enable MAGMA library for GPU-accelerated eigensolvers (requires GPU=ON)" OFF)
+if(GPU)
+  enable_language(CUDA)
+  find_package(CUDAToolkit REQUIRED)
+  message(STATUS "CUDA Toolkit found: ${CUDAToolkit_VERSION}")
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 75 80 86 89 90 CACHE STRING "CUDA architectures to compile for")
+  endif()
+  message(STATUS "CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+  if(MAGMA)
+    find_library(MAGMA_LIBRARY magma HINTS ENV MAGMA_DIR PATH_SUFFIXES lib lib64)
+    find_path(MAGMA_INCLUDE magma.h HINTS ENV MAGMA_DIR PATH_SUFFIXES include)
+    if(NOT MAGMA_LIBRARY OR NOT MAGMA_INCLUDE)
+      message(FATAL_ERROR "MAGMA not found. Set MAGMA_DIR environment variable or use -DMAGMA=OFF")
+    endif()
+    message(STATUS "MAGMA found: ${MAGMA_LIBRARY}")
+  endif()
+endif()
+
 # Follow GNU conventions for installing directories (languages need to be enabled at this stage)
 include(GNUInstallDirs)
 
@@ -120,6 +141,18 @@ endif()
 
 # Add CITATION.cff to source files so that version updates are not ignored
 target_sources(mopac-core PRIVATE CITATION.cff)
+
+# Apply GPU compile definitions and link libraries to mopac-core
+# (must be after mopac-core target creation)
+if(GPU)
+  target_compile_definitions(mopac-core PRIVATE GPU)
+  target_link_libraries(mopac-core PUBLIC CUDA::cudart CUDA::cublas)
+  if(MAGMA)
+    target_compile_definitions(mopac-core PRIVATE MAGMA)
+    target_link_libraries(mopac-core PUBLIC ${MAGMA_LIBRARY})
+    target_include_directories(mopac-core PUBLIC ${MAGMA_INCLUDE})
+  endif()
+endif()
 
 # BZ build on Windows w/ the Intel Fortran compiler
 option(BUILD_BZ "Build BZ with QuickWin GUI (ifort required)" OFF)
@@ -266,11 +299,12 @@ if(ENABLE_COVERAGE)
   configure_file("cmake/CTestCustom.cmake" "${CMAKE_BINARY_DIR}/CTestCustom.cmake")
 endif()
 
-# GPU functionality (not functional at the moment)
-option(GPU "GPU build flag" OFF)
-if(GPU)
-  add_definitions(-DGPU)
-endif()
+# GPU functionality (old block - replaced by new GPU section near line 61)
+# Kept commented for historical reference
+#option(GPU "GPU build flag" OFF)
+#if(GPU)
+#  add_definitions(-DGPU)
+#endif()
 
 # Add tests
 option(TESTS "Enable tests (needs Python3 and Numpy)" ON)
