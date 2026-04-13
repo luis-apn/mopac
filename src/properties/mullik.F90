@@ -33,6 +33,9 @@
 !
       use chanel_C, only : igpt, gpt_fn, iw
 !
+#ifdef GPU
+      use mod_vars_cuda, only: lgpu
+#endif
       implicit none
       double precision, intent(out) :: popmat((norbs*(norbs+1))/2)
 !-----------------------------------------------
