@@ -63,7 +63,7 @@
 #endif
 #ifdef GPU
       Use iso_c_binding
-      Use mod_vars_cuda, only: lgpu, ngpus, gpu_id
+      Use mod_vars_cuda, only: lgpu, ngpus, gpu_id, trace_gpu_flow
       Use gpu_info
       Use settingGPUcard
 #endif
@@ -283,8 +283,14 @@
         gpuName(1:6) = '' ; name_size(1:6) = 0 ; totalMem(1:6) = 0 ; clockRate(1:6) = 0
         hasDouble(1:6) = .false. ; gpu_ok(1:6) = .false.
         clockRate(1:6) = 0 ; major(1:6) = 0 ; minor(1:6) = 0; on_off(1:6) = 'OFF'
+        trace_gpu_flow = (index(keywrd, ' SETGPU=') /= 0)
         call gpuInfo(hasGpu, hasDouble, nDevices, gpuName,name_size, totalMem, &
                   & clockRate, major, minor)
+        if (trace_gpu_flow) then
+          write(iw,'(/,5x,a)') 'TRACE GPU: SETGPU flow tracing enabled.'
+          write(iw,'(5x,a,l1,a,i0)') 'TRACE GPU: gpuInfo -> hasGpu=', hasGpu, &
+     &      ', nDevices=', nDevices
+        end if
         lgpu = .false.
         lgpu_ref = hasGPU
         if (lgpu_ref) lgpu_ref = (index(keywrd, " NOGPU") == 0)
@@ -297,8 +303,16 @@
               gpu_ok(i) = .true.
               j = j + 1
             end if
+            if (trace_gpu_flow) then
+              write(iw,'(5x,a,i0,a,i0,a,i0,a,l1,a,l1)') &
+     &          'TRACE GPU: device ', i, ' CC=', major(i), '.', minor(i), &
+     &          ' hasDouble=', hasDouble(i), ' eligible=', gpu_ok(i)
+            end if
           end do
           lgpu_ref = (j >= 1)
+        end if
+        if (trace_gpu_flow) then
+          write(iw,'(5x,a,l1)') 'TRACE GPU: lgpu_ref after screening = ', lgpu_ref
         end if
         ngpus = 1  ! in this version only single-GPU calculation are performed. This variable control it.
 !       ngpus = j ! in future versions of MOPAC Multi-GPUs calculations should be allowed
@@ -308,6 +322,9 @@
           l = index(keywrd,' SETGPU=')
           if (l /= 0) then  ! The user has inserted SETGPU keyword to Select one specific GPU
             gpu_id = nint(reada(keywrd,l))
+            if (trace_gpu_flow) then
+              write(iw,'(5x,a,i0)') 'TRACE GPU: requested SETGPU device = ', gpu_id
+            end if
             if (gpu_id > nDevices .or. gpu_id < 1 .or. (.not. gpu_ok(gpu_id))) then
               ! the user made a wrong choice !!!
               Write(iw,'(/,5x,a)') ' Problem with the definition of SETGPU keyword ! '
@@ -316,6 +333,11 @@
             else
               on_off(gpu_id) = 'ON '
               call setGPU(gpu_id - 1, lstat)
+              if (trace_gpu_flow) then
+                write(iw,'(5x,a,i0,a,l1)') &
+     &            'TRACE GPU: setGPU called with zero-based device ', gpu_id - 1, &
+     &            ' status=', lstat
+              end if
               if (.not. lstat) then
                 write (6,*) 'Problem to set GPU card ID = ', gpu_id
                 stop
@@ -328,6 +350,11 @@
                 on_off(i) = 'ON '
                 gpu_id = i - 1
                 call setGPU(gpu_id, lstat)
+                if (trace_gpu_flow) then
+                  write(iw,'(5x,a,i0,a,i0,a,l1)') &
+     &              'TRACE GPU: automatic GPU selection chose device ', i, &
+     &              ' (zero-based ', gpu_id, ') status=', lstat
+                end if
                 if (.not. lstat) then
                   write (6,*) 'Problem to set GPU card ID = ', gpu_id
                   stop
@@ -345,6 +372,9 @@
 !  so do not use a GPU for small systems.  The lower limit, 100, is just a guess.
 !
         lgpu = (lgpu_ref .and. natoms > 100) ! Warning - there are problems with UHF calculations on small systems
+        if (trace_gpu_flow) then
+          write(iw,'(5x,a,i0,a,l1)') 'TRACE GPU: natoms=', natoms, ', final lgpu=', lgpu
+        end if
 #endif
       end if
       if (numcal == 1+numcal0 .and. natoms == 0) then

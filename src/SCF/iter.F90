@@ -31,7 +31,7 @@
       USE reimers_C, only: dd, ff, tot, cc0, aa, dtmp, nb2
       use cosmo_C, only : useps
 #ifdef GPU
-      Use mod_vars_cuda, only: lgpu, real_cuda, prec
+      Use mod_vars_cuda, only: lgpu, real_cuda, prec, trace_gpu_flow
       use density_cuda_i
 #endif
       implicit none
@@ -213,6 +213,13 @@
           if (lgpu) iopc_calcp = 4  ! DSYRK on GPU
 #endif
         end if
+#ifdef GPU
+        if (trace_gpu_flow) then
+          write(iw,'(5x,a,l1,a,l1,a,i0)') &
+     &      'TRACE GPU: iter dispatch halfe=', halfe, ', lgpu=', lgpu, &
+     &      ', iopc_calcp=', iopc_calcp
+        end if
+#endif
 !
         if (gs) gs = .not. halfe .and. .not.ci
 !
@@ -857,6 +864,12 @@
 !           using BLAS level-1 operations right now. This could be
 !           accelerated using a QR diagonalization analog at some point ...
 !          if (halfe .or. camkin) then
+#ifdef GPU
+            if (trace_gpu_flow) then
+              write(iw,'(5x,a,l1,a,i0)') &
+     &          'TRACE GPU: calling eigenvectors_LAPACK with lgpu=', lgpu, ', norbs=', norbs
+            end if
+#endif
             if (timitr) call timer ('BEFORE FULL DIAG')
             call eigenvectors_LAPACK(c, f, eigs, norbs)
             if (timitr) call timer ('AFTER  FULL DIAG')
@@ -872,6 +885,12 @@
 !            end if
 !          end if
         else
+#ifdef GPU
+          if (trace_gpu_flow) then
+            write(iw,'(5x,a,l1,a,i0)') &
+     &        'TRACE GPU: calling eigenvectors_LAPACK with lgpu=', lgpu, ', norbs=', norbs
+          end if
+#endif
           if (timitr) call timer ('BEFORE FULL DIAG')
           call eigenvectors_LAPACK(c, f, eigs, norbs)
           if (timitr) call timer ('AFTER  FULL DIAG')

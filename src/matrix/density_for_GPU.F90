@@ -14,8 +14,9 @@
 ! limitations under the License.
 
 subroutine density_for_GPU (c, fract, ndubl, nsingl, occ, mpack, norbs, mode, pp, iopc)
+      use chanel_C, only : iw
 #ifdef GPU
-      Use mod_vars_cuda, only: real_cuda, prec, nthreads_gpu, nblocks_gpu
+      Use mod_vars_cuda, only: real_cuda, prec, nthreads_gpu, nblocks_gpu, trace_gpu_flow
       Use iso_c_binding
       Use density_cuda_i
       Use mod_call_gemm_cublas
@@ -56,6 +57,11 @@ subroutine density_for_GPU (c, fract, ndubl, nsingl, occ, mpack, norbs, mode, pp
       Select case (iopc)
         case(2)   ! Option to use dgemm from CUBLAS
 #ifdef GPU
+          if (trace_gpu_flow) then
+            write(iw,'(5x,a,i0,a)') 'TRACE GPU: density_for_GPU case 2 -> cuBLAS DGEMM, norbs=', norbs, '.'
+          end if
+#endif
+#ifdef GPU
 
           nl21 = Min (norbs, nl2)
           nl11 = Min (norbs, nl1)
@@ -71,6 +77,11 @@ subroutine density_for_GPU (c, fract, ndubl, nsingl, occ, mpack, norbs, mode, pp
           deallocate (xmat,stat=i)
 #endif
         case(3)   ! Option to use dgemm from BLAS
+#ifdef GPU
+          if (trace_gpu_flow) then
+            write(iw,'(5x,a,i0,a)') 'TRACE GPU: density_for_GPU case 3 -> CPU DGEMM, norbs=', norbs, '.'
+          end if
+#endif
 
           nl21 = Min (norbs, nl2)
           nl11 = Min (norbs, nl1)
@@ -92,6 +103,9 @@ subroutine density_for_GPU (c, fract, ndubl, nsingl, occ, mpack, norbs, mode, pp
           deallocate (xmat,stat=i)
         case(4)   ! Option to use dsyrk from CUBLAS
 #ifdef GPU
+          if (trace_gpu_flow) then
+            write(iw,'(5x,a,i0,a)') 'TRACE GPU: density_for_GPU case 4 -> cuBLAS DSYRK, norbs=', norbs, '.'
+          end if
           allocate(xmat(norbs,norbs),stat = i)
           forall (j = 1:norbs, i=1:norbs) xmat(i, j) = 0.d0
           call syrk_cublas ('U','N',norbs,ndubl, &
@@ -101,6 +115,11 @@ subroutine density_for_GPU (c, fract, ndubl, nsingl, occ, mpack, norbs, mode, pp
           deallocate(xmat,stat=i)
 #endif
         case(5)   ! Option to use dsyrk from BLAS
+#ifdef GPU
+          if (trace_gpu_flow) then
+            write(iw,'(5x,a,i0,a)') 'TRACE GPU: density_for_GPU case 5 -> CPU DSYRK, norbs=', norbs, '.'
+          end if
+#endif
           if (fract < 1.d-2) then
             allocate(xmat(norbs,norbs),stat = i)
             forall (j = 1:norbs, i=1:norbs) xmat(i, j) = 0.d0

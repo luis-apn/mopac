@@ -16,7 +16,7 @@
     Subroutine eigenvectors_LAPACK(eigenvecs, xmat, eigvals, ndim)
       USE chanel_C, only : iw
 #ifdef GPU
-      Use mod_vars_cuda, only: lgpu, ngpus, prec
+      Use mod_vars_cuda, only: lgpu, ngpus, prec, trace_gpu_flow
 #endif
 #ifdef MAGMA
       !Use magma
@@ -73,6 +73,11 @@ end if
 
 #ifdef MAGMA
       if (lgpu .and. ndim > 100) then
+         if (trace_gpu_flow) then
+            write(iw,'(5x,a,i0,a,i0,a)') &
+     &        'TRACE GPU: eigenvectors_LAPACK query -> MAGMA, ndim=', ndim, &
+     &        ', ngpus=', ngpus, '.'
+         end if
          if (ngpus > 1) then
              call magma_dsyevd_Driver1(ngpus,'v','l',ndim,eigenvecs,ndim,eigvals,&
                     & work_tmp,lwork,iwork_tmp,liwork,info)
@@ -81,10 +86,21 @@ end if
                     & work_tmp,lwork,iwork_tmp,liwork,info)
           end if
       else
+         if (trace_gpu_flow) then
+            write(iw,'(5x,a,l1,a,i0,a)') &
+     &        'TRACE GPU: eigenvectors_LAPACK query -> LAPACK, lgpu=', lgpu, &
+     &        ', ndim=', ndim, '.'
+         end if
          call dsyevd('v','u',ndim,eigenvecs,ndim,eigvals,work_tmp,&
                     & lwork,iwork_tmp,liwork,info)
       end if
 #else
+#ifdef GPU
+      if (trace_gpu_flow) then
+         write(iw,'(5x,a,i0,a)') &
+     &     'TRACE GPU: eigenvectors_LAPACK query -> LAPACK (MAGMA disabled), ndim=', ndim, '.'
+      end if
+#endif
       call dsyevd('v','u',ndim,eigenvecs,ndim,eigvals,work_tmp, &
                     & lwork,iwork_tmp,liwork,info)
 #endif
