@@ -296,10 +296,10 @@
         if (lgpu_ref) lgpu_ref = (index(keywrd, " NOGPU") == 0)
         if (lgpu_ref) then
           lgpu_ref = .false.
-! Counting how many GPUs are suitable to perform the calculations or with compute capability 2 (Fermi or Kepler).
+! Counting how many GPUs are suitable to perform the calculations with compute capability above 7.
           j = 0
           do i = 1, nDevices
-            if (major(i) >= 2  .and. hasDouble(i)) then
+            if (major(i) >= 7  .and. hasDouble(i)) then
               gpu_ok(i) = .true.
               j = j + 1
             end if
