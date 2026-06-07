@@ -293,7 +293,7 @@
         end if
         lgpu = .false.
         lgpu_ref = hasGPU
-        if (lgpu_ref) lgpu_ref = (index(keywrd, " NOGPU") == 0)
+        if (lgpu_ref) lgpu_ref = (index(keywrd, " SETGPU") /= 0) .and. (index(keywrd, " NOGPU") == 0)
         if (lgpu_ref) then
           lgpu_ref = .false.
 ! Counting how many GPUs are suitable to perform the calculations with compute capability above 7.
