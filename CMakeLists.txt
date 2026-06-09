@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Using Cmake version 3.14 for NumPy support
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 # Ensure we are building out-of-source so that the tests work (issue 120)
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)

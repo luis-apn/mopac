@@ -23,6 +23,7 @@ endforeach()
 # CUDA source files
 set(gpu_cuda_src
     ${CMAKE_CURRENT_SOURCE_DIR}/cublas_drivers.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/cusolver_dsyevd.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/diag_density_cuda.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/gpu_info.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/mamult_cuda.cu
@@ -34,7 +35,7 @@ set_target_properties(mopac-gpu PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     POSITION_INDEPENDENT_CODE ON
 )
-target_link_libraries(mopac-gpu PUBLIC CUDA::cudart CUDA::cublas)
+target_link_libraries(mopac-gpu PUBLIC CUDA::cudart CUDA::cublas CUDA::cusolver)
 
 if(MAGMA)
     target_compile_definitions(mopac-gpu PRIVATE MAGMA)

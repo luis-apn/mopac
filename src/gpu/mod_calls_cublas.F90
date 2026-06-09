@@ -481,3 +481,27 @@ module mod_call_syrk_cublas_thrust
       
 #endif
 
+!
+!==============================================================================
+!   
+! Interface for cuSOLVER (dsyevd)
+! Used when GPU=ON but MAGMA=OFF
+!
+
+#ifdef GPU
+
+  module mod_cusolverDsyevd
+    interface cusolverDsyevd
+        subroutine cusolver_dsyevd_driver(n, eigenvecs, lda, eigvals, info) &
+            bind(c, name="CusolverDsyevd_Driver")
+            use iso_c_binding
+            implicit none
+            integer(c_int), value :: n, lda
+            real(c_double) :: eigenvecs(n*n), eigvals(n)
+            integer(c_int) :: info
+        end subroutine
+    end interface
+  end module mod_cusolverDsyevd
+
+#endif
+

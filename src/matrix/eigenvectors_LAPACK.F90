@@ -17,6 +17,7 @@
       USE chanel_C, only : iw
 #ifdef GPU
       Use mod_vars_cuda, only: lgpu, ngpus, prec, trace_gpu_flow
+      Use mod_cusolverDsyevd
 #endif
 #ifdef MAGMA
       !Use magma
@@ -96,9 +97,20 @@ end if
       end if
 #else
 #ifdef GPU
-      if (trace_gpu_flow) then
-         write(iw,'(5x,a,i0,a)') &
-     &     'TRACE GPU: eigenvectors_LAPACK query -> LAPACK (MAGMA disabled), ndim=', ndim, '.'
+      if (lgpu .and. ndim > 100) then
+         if (trace_gpu_flow) then
+            write(iw,'(5x,a,i0,a)') &
+     &        'TRACE GPU: eigenvectors_LAPACK -> cuSOLVER, ndim=', ndim, '.'
+         end if
+         call cusolver_dsyevd_driver(ndim, eigenvecs, ndim, eigvals, info)
+         if (info /= 0) write(iw,*) ' cusolverDnDsyevd error, CODE =', info
+         return
+      else
+         if (trace_gpu_flow) then
+            write(iw,'(5x,a,l1,a,i0,a)') &
+     &        'TRACE GPU: eigenvectors_LAPACK -> LAPACK, lgpu=', lgpu, &
+     &        ', ndim=', ndim, '.'
+         end if
       end if
 #endif
       call dsyevd('v','u',ndim,eigenvecs,ndim,eigvals,work_tmp, &
