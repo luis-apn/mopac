@@ -67,7 +67,16 @@ if(GPU)
   find_package(CUDAToolkit REQUIRED)
   message(STATUS "CUDA Toolkit found: ${CUDAToolkit_VERSION}")
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 75 80 86 89 90 CACHE STRING "CUDA architectures to compile for")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+      # Optimize local builds for every GPU detected during configuration.
+      set(CMAKE_CUDA_ARCHITECTURES native CACHE STRING "CUDA architectures to compile for")
+    else()
+      message(FATAL_ERROR
+        "CMake 3.24 or newer is required for automatic CUDA architecture detection.\n"
+        "Upgrade CMake or configure the build with the architecture required by your GPU, for example:\n"
+        "  cmake -S . -B build-gpu -DGPU=ON -DCMAKE_CUDA_ARCHITECTURES=120\n"
+        "Replace 120 with the compute capability reported for your GPU (for example, 86 for CC 8.6).")
+    endif()
   endif()
   message(STATUS "CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
   if(MAGMA)
